@@ -17,7 +17,11 @@ class UwongFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->name(),
+            'gender' => fake()->boolean(),
+            'birthday' => fake()->date(),
+            'phone' => fake()->phoneNumber(),
+            'address' => fake()->address(),
         ];
     }
 }
