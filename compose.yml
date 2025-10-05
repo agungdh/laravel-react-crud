@@ -1,0 +1,47 @@
+services:
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+  mailpit:
+      image: axllent/mailpit
+      container_name: mailpit
+      restart: unless-stopped
+      ports:
+          - "127.0.0.1:8025:8025"
+          - "127.0.0.1:1025:1025"
+  adminer:
+      image: adminer
+      restart: always
+      ports:
+          - "127.0.0.1:8083:8080"
+  postgres:
+      image: postgres:15
+      container_name: postgres_db
+      restart: always
+      environment:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: crud
+      ports:
+          - "127.0.0.1:5432:5432"
+      volumes:
+          - postgres_data:/var/lib/postgresql/data
+  pgadmin:
+      image: dpage/pgadmin4
+      container_name: pgadmin
+      restart: always
+      environment:
+          PGADMIN_DEFAULT_EMAIL: admin@email.com
+          PGADMIN_DEFAULT_PASSWORD: admin
+      ports:
+          - "127.0.0.1:5050:80"
+      depends_on:
+          - postgres
+volumes:
+  postgres_data:
+  redis_data:
