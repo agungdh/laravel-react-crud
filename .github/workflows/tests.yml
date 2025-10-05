@@ -2,17 +2,29 @@ name: tests
 
 on:
   push:
-    branches:
-      - develop
-      - master
+    branches: [develop, master]
   pull_request:
-    branches:
-      - develop
-      - master
+    branches: [develop, master]
 
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: laravel_test
+        ports:
+          - 5432:5432
+        # Pastikan DB ready sebelum step jalan
+        options: >-
+          --health-cmd="pg_isready -U postgres -d laravel_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout
@@ -24,6 +36,7 @@ jobs:
           php-version: 8.4
           tools: composer:v2
           coverage: xdebug
+          extensions: pdo_pgsql, pgsql
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -34,8 +47,8 @@ jobs:
       - name: Install Node Dependencies
         run: npm ci
 
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: Install PHP Dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Build Assets
         run: npm run build
@@ -43,8 +56,32 @@ jobs:
       - name: Copy Environment File
         run: cp .env.example .env
 
+      - name: Configure .env for CI (Postgres)
+        run: |
+          {
+            echo "APP_ENV=testing"
+            echo "APP_DEBUG=false"
+            echo "APP_URL=http://localhost"
+            echo "BROADCAST_DRIVER=log"
+            echo "CACHE_DRIVER=array"
+            echo "FILESYSTEM_DISK=local"
+            echo "QUEUE_CONNECTION=sync"
+            echo "SESSION_DRIVER=array"
+            echo "MAIL_MAILER=log"
+            echo ""
+            echo "DB_CONNECTION=pgsql"
+            echo "DB_HOST=127.0.0.1"
+            echo "DB_PORT=5432"
+            echo "DB_DATABASE=laravel_test"
+            echo "DB_USERNAME=postgres"
+            echo "DB_PASSWORD=postgres"
+          } >> .env
+
       - name: Generate Application Key
         run: php artisan key:generate
+
+      - name: Run Migrations
+        run: php artisan migrate --force
 
       - name: Tests
         run: ./vendor/bin/pest
