@@ -120,7 +120,9 @@ export default function Welcome() {
                             </ul>
                             <ul className="flex gap-3 text-sm leading-normal">
                                 <li>
-                                    <Button variant="contained">Hello world</Button>
+                                    <Button variant="contained">
+                                        Hello world
+                                    </Button>
                                 </li>
                             </ul>
                         </div>
