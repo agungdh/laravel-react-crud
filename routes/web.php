@@ -13,6 +13,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
+    Route::patch('/uwong', [UwongController::class, 'datas']);
     Route::get('/uwong', [UwongController::class, 'index']);
     Route::get('/uwong/create', [UwongController::class, 'create']);
 });

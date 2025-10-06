@@ -7,6 +7,24 @@ import { initializeTheme } from './hooks/use-appearance';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+// --- Global fetch patch: inject CSRF + same-origin credentials ---
+(() => {
+    const originalFetch = window.fetch.bind(window);
+
+    window.fetch = (input: RequestInfo | URL, init: RequestInit = {}) => {
+        const token =
+            document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+
+        const headers = new Headers(init.headers || {});
+        headers.set('X-Requested-With', 'XMLHttpRequest');
+        headers.set('X-CSRF-TOKEN', token);
+
+        const credentials = init.credentials ?? 'same-origin';
+
+        return originalFetch(input, { ...init, headers, credentials });
+    };
+})();
+
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: (name) =>
