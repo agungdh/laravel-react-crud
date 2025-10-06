@@ -18,5 +18,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/uwong/create', [UwongController::class, 'create']);
 });
 
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->name('csrf.token');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

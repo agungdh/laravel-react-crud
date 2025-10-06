@@ -1,21 +1,54 @@
 import '../css/app.css';
-
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-// --- Global fetch patch: inject CSRF + same-origin credentials ---
+/* -----------------------------------------------------------
+   🔒 CSRF HELPERS
+----------------------------------------------------------- */
+function getMetaCsrf(): string {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+}
+
+function setMetaCsrf(token: string) {
+    const el = document.querySelector('meta[name="csrf-token"]');
+    if (el) el.setAttribute('content', token);
+}
+
+/**
+ * Ambil token CSRF baru dari backend dan update meta tag + cache JS
+ */
+async function refreshCsrfToken() {
+    try {
+        const res = await fetch('/csrf-token', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (res.ok) {
+            const { token } = await res.json();
+            setMetaCsrf(token);
+            (window as any).__CSRF_TOKEN__ = token;
+            console.info('[CSRF] token updated');
+        } else {
+            console.warn('[CSRF] failed to refresh token', res.status);
+        }
+    } catch (err) {
+        console.error('[CSRF] error refreshing token', err);
+    }
+}
+
+/* -----------------------------------------------------------
+   🌐 PATCH GLOBAL FETCH
+----------------------------------------------------------- */
 (() => {
     const originalFetch = window.fetch.bind(window);
 
     window.fetch = (input: RequestInfo | URL, init: RequestInit = {}) => {
-        const token =
-            document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content') ?? '';
+        const token = (window as any).__CSRF_TOKEN__ ?? getMetaCsrf();
 
         const headers = new Headers(init.headers || {});
         headers.set('X-Requested-With', 'XMLHttpRequest');
@@ -27,6 +60,22 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
     };
 })();
 
+/* -----------------------------------------------------------
+   ⚡ REFRESH CSRF SETELAH LOGIN
+----------------------------------------------------------- */
+router.on('finish', (event: any) => {
+    const visit = event?.detail?.visit;
+    if (visit?.method?.toLowerCase() === 'post' && String(visit?.url || '').includes('/login')) {
+        refreshCsrfToken();
+    }
+});
+
+// Jalankan sekali saat pertama load
+refreshCsrfToken();
+
+/* -----------------------------------------------------------
+   🚀 INERTIA APP
+----------------------------------------------------------- */
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: (name) =>
@@ -36,13 +85,10 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
-
         root.render(<App {...props} />);
     },
-    progress: {
-        color: '#4B5563',
-    },
+    progress: { color: '#4B5563' },
 });
 
-// This will set light / dark mode on load...
+// Set tema light/dark saat load
 initializeTheme();
