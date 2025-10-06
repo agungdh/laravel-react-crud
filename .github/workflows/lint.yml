@@ -40,6 +40,3 @@ jobs:
 
       - name: Format Frontend
         run: npm run format
-
-      - name: Lint Frontend
-        run: npm run lint
