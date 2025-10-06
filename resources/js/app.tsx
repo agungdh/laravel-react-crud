@@ -1,7 +1,7 @@
-import '../css/app.css';
 import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import '../css/app.css';
 import { initializeTheme } from './hooks/use-appearance';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -10,7 +10,11 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
    🔒 CSRF HELPERS
 ----------------------------------------------------------- */
 function getMetaCsrf(): string {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+    return (
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content') ?? ''
+    );
 }
 
 function setMetaCsrf(token: string) {
@@ -65,7 +69,10 @@ async function refreshCsrfToken() {
 ----------------------------------------------------------- */
 router.on('finish', (event: any) => {
     const visit = event?.detail?.visit;
-    if (visit?.method?.toLowerCase() === 'post' && String(visit?.url || '').includes('/login')) {
+    if (
+        visit?.method?.toLowerCase() === 'post' &&
+        String(visit?.url || '').includes('/login')
+    ) {
         refreshCsrfToken();
     }
 });
