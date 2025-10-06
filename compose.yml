@@ -20,7 +20,7 @@ services:
       ports:
           - "127.0.0.1:8083:8080"
   postgres:
-      image: postgres:15
+      image: postgres:18
       container_name: postgres_db
       restart: always
       environment:
