@@ -10,4 +10,9 @@ class UwongController extends Controller
     {
         return Inertia::render('uwong/index');
     }
+
+    public function create()
+    {
+        return Inertia::render('uwong/form');
+    }
 }

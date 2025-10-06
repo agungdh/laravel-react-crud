@@ -14,6 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('/uwong', [UwongController::class, 'index']);
+    Route::get('/uwong/create', [UwongController::class, 'create']);
 });
 
 require __DIR__.'/settings.php';
