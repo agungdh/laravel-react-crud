@@ -13,7 +13,9 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
     window.fetch = (input: RequestInfo | URL, init: RequestInit = {}) => {
         const token =
-            document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content') ?? '';
 
         const headers = new Headers(init.headers || {});
         headers.set('X-Requested-With', 'XMLHttpRequest');

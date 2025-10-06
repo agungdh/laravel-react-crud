@@ -1,16 +1,15 @@
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
+import { formatTanggalIndo } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
+import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 import { useEffect, useState } from 'react';
-import { formatTanggalIndo } from '@/lib/utils';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -54,11 +53,18 @@ export default function Index() {
                                 {uwongs.map((uwong) => (
                                     <TableRow
                                         key={uwong.uuid}
-                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                        sx={{
+                                            '&:last-child td, &:last-child th':
+                                                { border: 0 },
+                                        }}
                                     >
                                         <TableCell>{uwong.name}</TableCell>
-                                        <TableCell>{uwong.gender ? 'Male' : 'Female'}</TableCell>
-                                        <TableCell>{formatTanggalIndo(uwong.birthday)}</TableCell>
+                                        <TableCell>
+                                            {uwong.gender ? 'Male' : 'Female'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {formatTanggalIndo(uwong.birthday)}
+                                        </TableCell>
                                         <TableCell>{uwong.phone}</TableCell>
                                         <TableCell>{uwong.address}</TableCell>
                                     </TableRow>

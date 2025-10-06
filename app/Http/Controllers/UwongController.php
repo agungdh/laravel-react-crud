@@ -12,7 +12,7 @@ class UwongController extends Controller
         return Uwong::all();
     }
 
-   public function index()
+    public function index()
     {
         return Inertia::render('uwong/index');
     }
