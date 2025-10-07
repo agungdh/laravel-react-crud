@@ -2,6 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatTanggalIndo } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
+import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -67,6 +68,13 @@ export default function Index() {
                                         </TableCell>
                                         <TableCell>{uwong.phone}</TableCell>
                                         <TableCell>{uwong.address}</TableCell>
+                                        <TableCell>
+                                            <a href={`/uwong/${uwong.uuid}`}>
+                                                <Button variant="contained">
+                                                    Edit
+                                                </Button>
+                                            </a>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
