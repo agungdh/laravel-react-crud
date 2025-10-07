@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatTanggalIndo } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { FormValues as UwongFormValues } from './form';
 
 import {
@@ -40,37 +40,22 @@ import DeleteIcon from '@mui/icons-material/Delete';
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Uwong', href: '/uwong' }];
 
 type Uwong = UwongFormValues & { uuid: string };
-
-// Laravel paginator shape
-type UwongPaginator = {
-    data: Uwong[];
-    current_page: number;
-    per_page: number;
-    total: number;
-};
-
-// Kolom yang bisa sort (harus match whitelist di controller)
+type UwongPaginator = { data: Uwong[]; current_page: number; per_page: number; total: number };
 type SortBy = 'id' | 'name' | 'gender' | 'birthday' | 'phone' | 'address' | 'created_at';
 type SortDir = 'asc' | 'desc';
 
 export default function UwongIndex() {
-    // Data & UI state
     const [rows, setRows] = useState<Uwong[]>([]);
     const [loading, setLoading] = useState(false);
     const [q, setQ] = useState('');
-    const [page, setPage] = useState(0); // MUI 0-based
+    const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [total, setTotal] = useState(0);
-
-    // Sorting state
     const [sortBy, setSortBy] = useState<SortBy>('id');
     const [sortDir, setSortDir] = useState<SortDir>('desc');
-
-    // Delete state
     const [deleteTarget, setDeleteTarget] = useState<Uwong | null>(null);
     const [deleting, setDeleting] = useState(false);
 
-    // Server fetch: PATCH /uwong (datas)
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
@@ -84,8 +69,8 @@ export default function UwongIndex() {
                 body: JSON.stringify({
                     q,
                     per_page: rowsPerPage,
-                    page: page + 1,          // Laravel expects 1-based
-                    sort_by: sortBy,         // server-side sorting
+                    page: page + 1,
+                    sort_by: sortBy,
                     sort_dir: sortDir,
                 }),
             });
@@ -104,32 +89,15 @@ export default function UwongIndex() {
         fetchData();
     }, [fetchData]);
 
-    // Toolbar actions
-    const onRefresh = () => fetchData();
-    const onChangeQuery = (val: string) => {
-        setQ(val);
-        setPage(0); // reset ke halaman pertama saat query berubah
-    };
-
-    // Pagination handlers
-    const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
-    const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(e.target.value, 10));
-        setPage(0);
-    };
-
-    // Sorting handlers
-    const createSortHandler = (column: SortBy) => () => {
+    const handleSort = (column: SortBy) => () => {
         if (sortBy === column) {
-            setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
         } else {
             setSortBy(column);
             setSortDir('asc');
         }
-        setPage(0);
     };
 
-    // Delete
     const handleDelete = async () => {
         if (!deleteTarget) return;
         setDeleting(true);
@@ -149,11 +117,6 @@ export default function UwongIndex() {
         }
     };
 
-    const startIndex = useMemo(() => page * rowsPerPage, [page, rowsPerPage]);
-
-    // Helper: apakah kolom sedang di-sort
-    const isSorted = (col: SortBy) => sortBy === col;
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Uwong" />
@@ -168,7 +131,7 @@ export default function UwongIndex() {
                                 size="small"
                                 placeholder="Cari nama / phone / alamat / tanggal lahir"
                                 value={q}
-                                onChange={(e) => onChangeQuery(e.target.value)}
+                                onChange={(e) => { setQ(e.target.value); setPage(0); }}
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
@@ -178,13 +141,9 @@ export default function UwongIndex() {
                                 }}
                             />
                             <Tooltip title="Refresh">
-                                <IconButton onClick={onRefresh}>
-                                    <RefreshIcon />
-                                </IconButton>
+                                <IconButton onClick={fetchData}><RefreshIcon /></IconButton>
                             </Tooltip>
-                            <Button component={Link as any} href="/uwong/create" variant="contained" startIcon={<AddIcon />}>
-                                Tambah
-                            </Button>
+                            <Button component={Link as any} href="/uwong/create" variant="contained" startIcon={<AddIcon />}>Tambah</Button>
                         </Stack>
                     </Stack>
 
@@ -195,86 +154,57 @@ export default function UwongIndex() {
                         <Table sx={{ minWidth: 820 }} aria-label="tabel-uwong">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell width={56}>
+                                    <TableCell>
                                         <TableSortLabel
-                                            active={isSorted('id')}
-                                            direction={isSorted('id') ? sortDir : 'asc'}
-                                            onClick={createSortHandler('id')}
-                                        >
-                                            #
-                                        </TableSortLabel>
+                                            active={sortBy === 'name'}
+                                            direction={sortDir}
+                                            onClick={handleSort('name')}
+                                        >Nama</TableSortLabel>
                                     </TableCell>
                                     <TableCell>
                                         <TableSortLabel
-                                            active={isSorted('name')}
-                                            direction={isSorted('name') ? sortDir : 'asc'}
-                                            onClick={createSortHandler('name')}
-                                        >
-                                            Nama
-                                        </TableSortLabel>
+                                            active={sortBy === 'gender'}
+                                            direction={sortDir}
+                                            onClick={handleSort('gender')}
+                                        >Gender</TableSortLabel>
                                     </TableCell>
                                     <TableCell>
                                         <TableSortLabel
-                                            active={isSorted('gender')}
-                                            direction={isSorted('gender') ? sortDir : 'asc'}
-                                            onClick={createSortHandler('gender')}
-                                        >
-                                            Gender
-                                        </TableSortLabel>
+                                            active={sortBy === 'birthday'}
+                                            direction={sortDir}
+                                            onClick={handleSort('birthday')}
+                                        >Tgl Lahir</TableSortLabel>
                                     </TableCell>
                                     <TableCell>
                                         <TableSortLabel
-                                            active={isSorted('birthday')}
-                                            direction={isSorted('birthday') ? sortDir : 'asc'}
-                                            onClick={createSortHandler('birthday')}
-                                        >
-                                            Tgl Lahir
-                                        </TableSortLabel>
+                                            active={sortBy === 'phone'}
+                                            direction={sortDir}
+                                            onClick={handleSort('phone')}
+                                        >Phone</TableSortLabel>
                                     </TableCell>
                                     <TableCell>
                                         <TableSortLabel
-                                            active={isSorted('phone')}
-                                            direction={isSorted('phone') ? sortDir : 'asc'}
-                                            onClick={createSortHandler('phone')}
-                                        >
-                                            Phone
-                                        </TableSortLabel>
+                                            active={sortBy === 'address'}
+                                            direction={sortDir}
+                                            onClick={handleSort('address')}
+                                        >Alamat</TableSortLabel>
                                     </TableCell>
-                                    <TableCell>
-                                        <TableSortLabel
-                                            active={isSorted('address')}
-                                            direction={isSorted('address') ? sortDir : 'asc'}
-                                            onClick={createSortHandler('address')}
-                                        >
-                                            Alamat
-                                        </TableSortLabel>
-                                    </TableCell>
-                                    <TableCell align="right" width={180}>Aksi</TableCell>
+                                    <TableCell align="right">Aksi</TableCell>
                                 </TableRow>
                             </TableHead>
 
                             <TableBody>
                                 {!loading && rows.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={7}>
-                                            <Box display="flex" alignItems="center" justifyContent="center" py={6}>
-                                                <Stack spacing={1} alignItems="center">
-                                                    <Typography variant="body1">Belum ada data.</Typography>
-                                                    <Button component={Link as any} href="/uwong/create" variant="outlined" startIcon={<AddIcon />}>
-                                                        Tambah Uwong
-                                                    </Button>
-                                                </Stack>
-                                            </Box>
+                                        <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                                            <Typography>Belum ada data</Typography>
                                         </TableCell>
                                     </TableRow>
                                 )}
 
-                                {rows.map((u, idx) => (
+                                {rows.map((u) => (
                                     <TableRow key={u.uuid} hover>
-                                        <TableCell>{startIndex + idx + 1}</TableCell>
-                                        <TableCell>
-                                            <Typography fontWeight={600}>{u.name}</Typography>
-                                        </TableCell>
+                                        <TableCell><Typography fontWeight={600}>{u.name}</Typography></TableCell>
                                         <TableCell>
                                             <Chip
                                                 label={u.gender ? 'Male' : 'Female'}
@@ -284,16 +214,10 @@ export default function UwongIndex() {
                                             />
                                         </TableCell>
                                         <TableCell>{u.birthday ? formatTanggalIndo(u.birthday) : '-'}</TableCell>
-                                        <TableCell>{u.phone || '-'}</TableCell>
-                                        <TableCell>
-                                            <Tooltip title={u.address || '-'} placement="top" arrow>
-                                                <Typography variant="body2" noWrap sx={{ maxWidth: 320 }}>
-                                                    {u.address || '-'}
-                                                </Typography>
-                                            </Tooltip>
-                                        </TableCell>
+                                        <TableCell>{u.phone}</TableCell>
+                                        <TableCell>{u.address}</TableCell>
                                         <TableCell align="right">
-                                            <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                                            <Stack direction="row" spacing={1} justifyContent="flex-end">
                                                 <Button
                                                     component={Link as any}
                                                     href={`/uwong/${u.uuid}/edit`}
@@ -319,15 +243,14 @@ export default function UwongIndex() {
                             </TableBody>
                         </Table>
 
-                        {/* Pagination (server-side) */}
                         <TablePagination
                             component="div"
                             count={total}
                             page={page}
-                            onPageChange={handleChangePage}
+                            onPageChange={(_, newPage) => setPage(newPage)}
                             rowsPerPage={rowsPerPage}
                             rowsPerPageOptions={[5, 10, 25, 50]}
-                            onRowsPerPageChange={handleChangeRowsPerPage}
+                            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                         />
                     </TableContainer>
                 </Paper>
@@ -338,13 +261,11 @@ export default function UwongIndex() {
                 <DialogTitle>Hapus Uwong</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Apakah kamu yakin ingin menghapus <b>{deleteTarget?.name}</b>?
+                        Yakin ingin menghapus <b>{deleteTarget?.name}</b>?
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>
-                        Batal
-                    </Button>
+                    <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>Batal</Button>
                     <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
                         {deleting ? 'Menghapus...' : 'Hapus'}
                     </Button>
