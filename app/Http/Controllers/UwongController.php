@@ -33,7 +33,7 @@ class UwongController extends Controller
             'address' => 'required',
         ]);
 
-        return $data;
+        return Uwong::create($data);
     }
 
     public function show(Uwong $uwong)

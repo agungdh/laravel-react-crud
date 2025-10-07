@@ -15,12 +15,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index() {
-    const [errors, setErrors] = useState([]);
-
     const {
         register,
         handleSubmit,
     } = useForm()
+    const [errors, setErrors] = useState([]);
 
     async function onSubmit(data) {
         try {
@@ -56,8 +55,14 @@ export default function Index() {
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <TextField {...register("name")} label="Name" variant="outlined" />
                         <br/>
-                        {errors.name}
+                        {errors.name?.[0]}
                         <br/>
+
+                        <TextField {...register("gender")} label="Gender" variant="outlined" />
+                        <br/>
+                        {errors.gender?.[0]}
+                        <br/>
+
                         <Button type="submit" variant="contained">Tambah</Button>
                     </form>
                 </div>
