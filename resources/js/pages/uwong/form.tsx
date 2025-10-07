@@ -24,7 +24,7 @@ import {
 
 type FormValues = {
     name: string;
-    gender: boolean; // true = laki-laki, false = perempuan
+    gender: boolean | null;
     birthday: string;
     phone: string;
     address: string;
@@ -44,7 +44,7 @@ export default function CreateUwong() {
     } = useForm<FormValues>({
         defaultValues: {
             name: '',
-            gender: true, // default laki-laki
+            gender: null,
             birthday: '',
             phone: '',
             address: '',
@@ -63,7 +63,7 @@ export default function CreateUwong() {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify(data), // gender sudah boolean
+                body: JSON.stringify(data),
                 credentials: 'same-origin',
             });
 
@@ -71,13 +71,12 @@ export default function CreateUwong() {
                 if (res.status === 422) {
                     const j = await res.json();
                     setBackendErrors(j.errors || {});
-                    setServerError('Periksa kembali isian Anda.');
                 } else {
                     throw new Error(`HTTP ${res.status}`);
                 }
             } else {
-                reset({ name: '', gender: true, birthday: '', phone: '', address: '' });
-                router.visit('/uwong'); // redirect setelah sukses
+                reset({ name: '', gender: null, birthday: '', phone: '', address: '' });
+                router.visit('/uwong');
             }
         } catch (e: any) {
             setServerError(e?.message || 'Terjadi kesalahan tak terduga.');
@@ -108,17 +107,17 @@ export default function CreateUwong() {
                                     />
                                 </FormControl>
 
-                                {/* Gender (boolean) */}
+                                {/* Gender */}
                                 <FormControl error={!!backendErrors.gender}>
                                     <Typography variant="subtitle2" className="mb-2">Jenis Kelamin</Typography>
                                     <Controller
                                         name="gender"
                                         control={control}
-                                        defaultValue={true}
+                                        defaultValue={null}
                                         render={({ field }) => (
                                             <RadioGroup
                                                 row
-                                                value={field.value ? 'true' : 'false'}
+                                                value={field.value === null ? '' : field.value ? 'true' : 'false'}
                                                 onChange={(e) => field.onChange(e.target.value === 'true')}
                                             >
                                                 <FormControlLabel value="true" control={<Radio />} label="Laki-laki" />
@@ -169,7 +168,7 @@ export default function CreateUwong() {
                                     />
                                 </FormControl>
 
-                                {/* Actions (di bawah) */}
+                                {/* Actions */}
                                 <Box className="flex items-center justify-end gap-2">
                                     <Button component={Link as any} href="/uwong" variant="text">
                                         Kembali
