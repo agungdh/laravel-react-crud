@@ -70,7 +70,7 @@ export default function Index() {
                                         <TableCell>{uwong.phone}</TableCell>
                                         <TableCell>{uwong.address}</TableCell>
                                         <TableCell>
-                                            <a href={`/uwong/${uwong.uuid}`}>
+                                            <a href={`/uwong/${uwong.uuid}/edit`}>
                                                 <Button variant="contained">
                                                     Edit
                                                 </Button>

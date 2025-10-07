@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import {
     Box,
@@ -30,17 +30,20 @@ type FormValues = {
     address: string;
 };
 
-export default function CreateUwong() {
+export default function UwongForm() {
+    const { props } = usePage<{ uwong_uuid?: string }>();
+    const uwongUuid = props.uwong_uuid ?? null;
+
     const [loading, setLoading] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
     const [backendErrors, setBackendErrors] = useState<Record<string, string[]>>({});
+    const [isEdit, setIsEdit] = useState<boolean>(!!uwongUuid);
 
     const {
         register,
         handleSubmit,
         reset,
         control,
-        formState: { isDirty },
     } = useForm<FormValues>({
         defaultValues: {
             name: '',
@@ -51,19 +54,47 @@ export default function CreateUwong() {
         },
     });
 
-    const onSubmit = async (data: FormValues) => {
+    // 🔹 Ambil data existing kalau mode edit
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!uwongUuid) return;
+
+            try {
+                const res = await fetch(`/uwong/${uwongUuid}`);
+                if (!res.ok) throw new Error(`Gagal ambil data Uwong`);
+                const data = await res.json();
+
+                reset({
+                    name: data.name || '',
+                    gender: data.gender === null ? null : !!data.gender,
+                    birthday: data.birthday || '',
+                    phone: data.phone || '',
+                    address: data.address || '',
+                });
+            } catch (e: any) {
+                setServerError(e?.message || 'Gagal memuat data Uwong.');
+            }
+        };
+
+        fetchData();
+    }, [uwongUuid, reset]);
+
+    const onSubmit = async (formData: FormValues) => {
         setLoading(true);
         setServerError(null);
         setBackendErrors({});
 
         try {
-            const res = await fetch('/uwong', {
-                method: 'POST',
+            const url = uwongUuid ? `/uwong/${uwongUuid}` : '/uwong';
+            const method = uwongUuid ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify(formData),
                 credentials: 'same-origin',
             });
 
@@ -75,7 +106,6 @@ export default function CreateUwong() {
                     throw new Error(`HTTP ${res.status}`);
                 }
             } else {
-                reset({ name: '', gender: null, birthday: '', phone: '', address: '' });
                 router.visit('/uwong');
             }
         } catch (e: any) {
@@ -86,11 +116,11 @@ export default function CreateUwong() {
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Uwong', href: '/uwong' }, { title: 'Create', href: '/uwong/create' }]}>
-            <Head title="Create Uwong" />
+        <AppLayout breadcrumbs={[{ title: 'Uwong', href: '/uwong' }, { title: isEdit ? 'Edit' : 'Create', href: `/uwong/${isEdit ? uwongUuid + '/edit' : 'create'}` }]}>
+            <Head title={isEdit ? 'Edit Uwong' : 'Create Uwong'} />
             <Box className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Card className="border border-sidebar-border/70 dark:border-sidebar-border rounded-xl">
-                    <CardHeader title={<Typography variant="h5" className="font-semibold">Tambah Uwong</Typography>} />
+                    <CardHeader title={<Typography variant="h5" className="font-semibold">{isEdit ? 'Edit Uwong' : 'Tambah Uwong'}</Typography>} />
                     <Divider />
                     <CardContent>
                         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -179,7 +209,7 @@ export default function CreateUwong() {
                                         disabled={loading}
                                         startIcon={loading ? <CircularProgress size={18} /> : null}
                                     >
-                                        Simpan
+                                        {isEdit ? 'Update' : 'Simpan'}
                                     </Button>
                                 </Box>
                             </Stack>

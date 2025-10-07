@@ -10,7 +10,7 @@ class UwongController extends Controller
 {
     public function datas()
     {
-        return Uwong::all();
+        return Uwong::orderBy('id', 'desc')->get();
     }
 
     public function index()
@@ -25,13 +25,7 @@ class UwongController extends Controller
 
     function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => 'required',
-            'gender' => 'required|boolean',
-            'birthday' => 'required|date',
-            'phone' => 'required|numeric',
-            'address' => 'required',
-        ]);
+        $data = $this->validate($request);
 
         return Uwong::create($data);
     }
@@ -39,5 +33,28 @@ class UwongController extends Controller
     public function show(Uwong $uwong)
     {
         return $uwong;
+    }
+
+    public function edit(Uwong $uwong)
+    {
+        return Inertia::render('uwong/form', [
+            'uwong_uuid' => $uwong->uuid,
+        ]);
+    }
+
+    function update(Request $request, Uwong $uwong) {
+        $data = $this->validate($request);
+
+        return $uwong->update($data);
+    }
+
+    private function validate(Request $request) {
+        return $request->validate([
+            'name' => 'required',
+            'gender' => 'required|boolean',
+            'birthday' => 'required|date',
+            'phone' => 'required|numeric',
+            'address' => 'required',
+        ]);
     }
 }
