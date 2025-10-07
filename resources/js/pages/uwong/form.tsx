@@ -24,7 +24,7 @@ import {
 
 type FormValues = {
     name: string;
-    gender: boolean;
+    gender: boolean; // true = laki-laki, false = perempuan
     birthday: string;
     phone: string;
     address: string;
@@ -45,7 +45,7 @@ export default function CreateUwong() {
     } = useForm<FormValues>({
         defaultValues: {
             name: '',
-            gender: true,
+            gender: true, // default: laki-laki
             birthday: '',
             phone: '',
             address: '',
@@ -57,8 +57,6 @@ export default function CreateUwong() {
         setServerError(null);
         setBackendErrors({});
 
-        const payload = { ...data };
-
         try {
             const res = await fetch('/uwong', {
                 method: 'POST',
@@ -66,7 +64,7 @@ export default function CreateUwong() {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(data), // gender sudah boolean
                 credentials: 'same-origin',
             });
 
@@ -80,7 +78,7 @@ export default function CreateUwong() {
                 }
             } else {
                 reset({ name: '', gender: true, birthday: '', phone: '', address: '' });
-                router.visit('/uwong');
+                router.visit('/uwong'); // redirect setelah sukses
             }
         } catch (e: any) {
             setServerError(e?.message || 'Terjadi kesalahan tak terduga.');
@@ -97,27 +95,13 @@ export default function CreateUwong() {
             <Box className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Card className="border border-sidebar-border/70 dark:border-sidebar-border rounded-xl">
                     <CardHeader
-                        title={
-                            <Box className="flex items-center justify-between">
-                                <Typography variant="h5" className="font-semibold">
-                                    Tambah Uwong
-                                </Typography>
-                                <Box className="flex items-center gap-2">
-                                    <Button component={Link as any} href="/uwong" variant="text">
-                                        Kembali
-                                    </Button>
-                                    <Button onClick={handleSubmit(onSubmit)} variant="contained" disabled={loading} startIcon={loading ? <CircularProgress size={18} /> : null}>
-                                        Simpan
-                                    </Button>
-                                </Box>
-                            </Box>
-                        }
-                        subheader={nameValue ? `Sedang menambahkan: ${nameValue}` : 'Lengkapi data berikut dengan benar.'}
+                        title={<Typography variant="h5" className="font-semibold">Tambah Uwong</Typography>}
                     />
                     <Divider />
                     <CardContent>
                         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
                             <Stack spacing={3}>
+                                {/* Nama */}
                                 <FormControl fullWidth>
                                     <TextField
                                         fullWidth
@@ -129,10 +113,9 @@ export default function CreateUwong() {
                                     />
                                 </FormControl>
 
+                                {/* Gender */}
                                 <FormControl error={!!backendErrors.gender}>
-                                    <Typography variant="subtitle2" className="mb-2">
-                                        Jenis Kelamin
-                                    </Typography>
+                                    <Typography variant="subtitle2" className="mb-2">Jenis Kelamin</Typography>
                                     <RadioGroup
                                         row
                                         {...register('gender')}
@@ -147,6 +130,7 @@ export default function CreateUwong() {
                                     <FormHelperText>{backendErrors.gender?.[0]}</FormHelperText>
                                 </FormControl>
 
+                                {/* Tanggal lahir */}
                                 <FormControl fullWidth>
                                     <TextField
                                         fullWidth
@@ -159,18 +143,22 @@ export default function CreateUwong() {
                                     />
                                 </FormControl>
 
+                                {/* Nomor HP */}
                                 <FormControl fullWidth>
                                     <TextField
                                         fullWidth
                                         label="Nomor HP"
                                         placeholder="08xxxxxxxxxx"
                                         {...register('phone')}
-                                        InputProps={{ startAdornment: <InputAdornment position="start">HP</InputAdornment> }}
+                                        InputProps={{
+                                            startAdornment: <InputAdornment position="start">HP</InputAdornment>,
+                                        }}
                                         error={!!backendErrors.phone}
                                         helperText={backendErrors.phone?.[0]}
                                     />
                                 </FormControl>
 
+                                {/* Alamat */}
                                 <FormControl fullWidth>
                                     <TextField
                                         fullWidth
@@ -184,12 +172,18 @@ export default function CreateUwong() {
                                     />
                                 </FormControl>
 
-                                <Box className="flex items-center gap-2">
-                                    <Button type="submit" variant="contained" disabled={loading} startIcon={loading ? <CircularProgress size={18} /> : null}>
-                                        Simpan Data
+                                {/* Actions: Kembali & Simpan DI BAWAH */}
+                                <Box className="flex items-center justify-end gap-2">
+                                    <Button component={Link as any} href="/uwong" variant="text">
+                                        Kembali
                                     </Button>
-                                    <Button type="button" variant="outlined" disabled={loading || !isDirty} onClick={() => reset()}>
-                                        Reset
+                                    <Button
+                                        type="submit"
+                                        variant="contained"
+                                        disabled={loading}
+                                        startIcon={loading ? <CircularProgress size={18} /> : null}
+                                    >
+                                        Simpan
                                     </Button>
                                 </Box>
                             </Stack>
@@ -202,12 +196,6 @@ export default function CreateUwong() {
                         )}
                     </CardContent>
                 </Card>
-
-                <Box className="text-sm text-muted-foreground mt-2">
-                    <Typography variant="body2">
-                        Tip: pastikan format tanggal benar dan nomor HP aktif. Semua kolom wajib diisi.
-                    </Typography>
-                </Box>
             </Box>
         </AppLayout>
     );
