@@ -9,6 +9,11 @@ import {
     Box,
     Button,
     Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
     IconButton,
     InputAdornment,
     LinearProgress,
@@ -29,6 +34,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Uwong', href: '/uwong' },
@@ -43,6 +49,9 @@ export default function UwongIndex() {
     const [q, setQ] = useState('');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+
+    const [deleteTarget, setDeleteTarget] = useState<Uwong | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const fetchData = useCallback(async () => {
         try {
@@ -87,6 +96,25 @@ export default function UwongIndex() {
     const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(e.target.value, 10));
         setPage(0);
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleting(true);
+        try {
+            const res = await fetch(`/uwong/${deleteTarget.uuid}`, {
+                method: 'DELETE',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            setDeleteTarget(null);
+            fetchData(); // refresh data
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setDeleting(false);
+        }
     };
 
     return (
@@ -141,7 +169,7 @@ export default function UwongIndex() {
                                     <TableCell>Tgl Lahir</TableCell>
                                     <TableCell>HP</TableCell>
                                     <TableCell>Alamat</TableCell>
-                                    <TableCell align="right" width={120}>Aksi</TableCell>
+                                    <TableCell align="right" width={160}>Aksi</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -184,15 +212,26 @@ export default function UwongIndex() {
                                             </Tooltip>
                                         </TableCell>
                                         <TableCell align="right">
-                                            <Button
-                                                component={Link as any}
-                                                href={`/uwong/${u.uuid}/edit`}
-                                                size="small"
-                                                variant="contained"
-                                                startIcon={<EditIcon fontSize="small" />}
-                                            >
-                                                Edit
-                                            </Button>
+                                            <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                                                <Button
+                                                    component={Link as any}
+                                                    href={`/uwong/${u.uuid}/edit`}
+                                                    size="small"
+                                                    variant="contained"
+                                                    startIcon={<EditIcon fontSize="small" />}
+                                                >
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    color="error"
+                                                    size="small"
+                                                    variant="outlined"
+                                                    startIcon={<DeleteIcon fontSize="small" />}
+                                                    onClick={() => setDeleteTarget(u)}
+                                                >
+                                                    Hapus
+                                                </Button>
+                                            </Stack>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -212,6 +251,27 @@ export default function UwongIndex() {
                     </TableContainer>
                 </Paper>
             </Box>
+
+            {/* Konfirmasi Hapus */}
+            <Dialog
+                open={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+            >
+                <DialogTitle>Hapus Uwong</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Apakah kamu yakin ingin menghapus <b>{deleteTarget?.name}</b>?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>
+                        Batal
+                    </Button>
+                    <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
+                        {deleting ? 'Menghapus...' : 'Hapus'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </AppLayout>
     );
 }

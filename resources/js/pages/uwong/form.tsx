@@ -22,7 +22,7 @@ import {
     Alert,
 } from '@mui/material';
 
-type FormValues = {
+export type FormValues = {
     name: string;
     gender: boolean | null;
     birthday: string;
