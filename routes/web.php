@@ -13,9 +13,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-    Route::patch('/uwong', [UwongController::class, 'datas']);
-    Route::get('/uwong', [UwongController::class, 'index']);
-    Route::get('/uwong/create', [UwongController::class, 'create']);
+    Route::prefix('/uwong')->group(function () {
+        Route::patch('/', [UwongController::class, 'datas']);
+        Route::get('/', [UwongController::class, 'index']);
+        Route::get('/create', [UwongController::class, 'create']);
+        Route::post('/', [UwongController::class, 'store']);
+        Route::get('/{uwong}', [UwongController::class, 'show']);
+        Route::get('/{uwong}/edit', [UwongController::class, 'edit']);
+        Route::put('/{uwong}', [UwongController::class, 'update']);
+        Route::delete('/{uwong}', [UwongController::class, 'destroy']);
+    });
+
 });
 
 Route::get('/csrf-token', function () {

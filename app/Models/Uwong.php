@@ -11,7 +11,18 @@ class Uwong extends Model
     /** @use HasFactory<\Database\Factories\UwongFactory> */
     use HasFactory;
 
-    protected static function booted()
+    protected $hidden = [
+        'id',
+        'created_at',
+        'updated_at',
+    ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
+    protected static function booted(): void
     {
         static::creating(function ($uwong) {
             $uwong->uuid = (string) Str::uuid();
