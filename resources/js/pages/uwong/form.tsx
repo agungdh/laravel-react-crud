@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import {
     Box,
     Button,
@@ -38,14 +38,13 @@ export default function CreateUwong() {
     const {
         register,
         handleSubmit,
-        watch,
         reset,
-        setValue,
+        control,
         formState: { isDirty },
     } = useForm<FormValues>({
         defaultValues: {
             name: '',
-            gender: true, // default: laki-laki
+            gender: true, // default laki-laki
             birthday: '',
             phone: '',
             address: '',
@@ -87,16 +86,12 @@ export default function CreateUwong() {
         }
     };
 
-    const nameValue = watch('name');
-
     return (
         <AppLayout breadcrumbs={[{ title: 'Uwong', href: '/uwong' }, { title: 'Create', href: '/uwong/create' }]}>
             <Head title="Create Uwong" />
             <Box className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Card className="border border-sidebar-border/70 dark:border-sidebar-border rounded-xl">
-                    <CardHeader
-                        title={<Typography variant="h5" className="font-semibold">Tambah Uwong</Typography>}
-                    />
+                    <CardHeader title={<Typography variant="h5" className="font-semibold">Tambah Uwong</Typography>} />
                     <Divider />
                     <CardContent>
                         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -113,24 +108,28 @@ export default function CreateUwong() {
                                     />
                                 </FormControl>
 
-                                {/* Gender */}
+                                {/* Gender (boolean) */}
                                 <FormControl error={!!backendErrors.gender}>
                                     <Typography variant="subtitle2" className="mb-2">Jenis Kelamin</Typography>
-                                    <RadioGroup
-                                        row
-                                        {...register('gender')}
-                                        onChange={(e) => {
-                                            const value = e.target.value === 'true';
-                                            setValue('gender', value);
-                                        }}
-                                    >
-                                        <FormControlLabel value="true" control={<Radio />} label="Laki-laki" />
-                                        <FormControlLabel value="false" control={<Radio />} label="Perempuan" />
-                                    </RadioGroup>
+                                    <Controller
+                                        name="gender"
+                                        control={control}
+                                        defaultValue={true}
+                                        render={({ field }) => (
+                                            <RadioGroup
+                                                row
+                                                value={field.value ? 'true' : 'false'}
+                                                onChange={(e) => field.onChange(e.target.value === 'true')}
+                                            >
+                                                <FormControlLabel value="true" control={<Radio />} label="Laki-laki" />
+                                                <FormControlLabel value="false" control={<Radio />} label="Perempuan" />
+                                            </RadioGroup>
+                                        )}
+                                    />
                                     <FormHelperText>{backendErrors.gender?.[0]}</FormHelperText>
                                 </FormControl>
 
-                                {/* Tanggal lahir */}
+                                {/* Tanggal Lahir */}
                                 <FormControl fullWidth>
                                     <TextField
                                         fullWidth
@@ -150,9 +149,7 @@ export default function CreateUwong() {
                                         label="Nomor HP"
                                         placeholder="08xxxxxxxxxx"
                                         {...register('phone')}
-                                        InputProps={{
-                                            startAdornment: <InputAdornment position="start">HP</InputAdornment>,
-                                        }}
+                                        InputProps={{ startAdornment: <InputAdornment position="start">HP</InputAdornment> }}
                                         error={!!backendErrors.phone}
                                         helperText={backendErrors.phone?.[0]}
                                     />
@@ -172,7 +169,7 @@ export default function CreateUwong() {
                                     />
                                 </FormControl>
 
-                                {/* Actions: Kembali & Simpan DI BAWAH */}
+                                {/* Actions (di bawah) */}
                                 <Box className="flex items-center justify-end gap-2">
                                     <Button component={Link as any} href="/uwong" variant="text">
                                         Kembali
