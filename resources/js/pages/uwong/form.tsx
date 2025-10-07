@@ -1,8 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
 import {
+    Alert,
     Box,
     Button,
     Card,
@@ -13,14 +12,15 @@ import {
     FormControl,
     FormControlLabel,
     FormHelperText,
-    Stack,
     InputAdornment,
     Radio,
     RadioGroup,
+    Stack,
     TextField,
     Typography,
-    Alert,
 } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
 export type FormValues = {
     name: string;
@@ -36,15 +36,12 @@ export default function UwongForm() {
 
     const [loading, setLoading] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
-    const [backendErrors, setBackendErrors] = useState<Record<string, string[]>>({});
+    const [backendErrors, setBackendErrors] = useState<
+        Record<string, string[]>
+    >({});
     const [isEdit, setIsEdit] = useState<boolean>(!!uwongUuid);
 
-    const {
-        register,
-        handleSubmit,
-        reset,
-        control,
-    } = useForm<FormValues>({
+    const { register, handleSubmit, reset, control } = useForm<FormValues>({
         defaultValues: {
             name: '',
             gender: null,
@@ -116,14 +113,32 @@ export default function UwongForm() {
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Uwong', href: '/uwong' }, { title: isEdit ? 'Edit' : 'Create', href: `/uwong/${isEdit ? uwongUuid + '/edit' : 'create'}` }]}>
+        <AppLayout
+            breadcrumbs={[
+                { title: 'Uwong', href: '/uwong' },
+                {
+                    title: isEdit ? 'Edit' : 'Create',
+                    href: `/uwong/${isEdit ? uwongUuid + '/edit' : 'create'}`,
+                },
+            ]}
+        >
             <Head title={isEdit ? 'Edit Uwong' : 'Create Uwong'} />
             <Box className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <Card className="border border-sidebar-border/70 dark:border-sidebar-border rounded-xl">
-                    <CardHeader title={<Typography variant="h5" className="font-semibold">{isEdit ? 'Edit Uwong' : 'Tambah Uwong'}</Typography>} />
+                <Card className="rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+                    <CardHeader
+                        title={
+                            <Typography variant="h5" className="font-semibold">
+                                {isEdit ? 'Edit Uwong' : 'Tambah Uwong'}
+                            </Typography>
+                        }
+                    />
                     <Divider />
                     <CardContent>
-                        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+                        <Box
+                            component="form"
+                            onSubmit={handleSubmit(onSubmit)}
+                            noValidate
+                        >
                             <Stack spacing={3}>
                                 {/* Nama */}
                                 <FormControl fullWidth>
@@ -139,7 +154,12 @@ export default function UwongForm() {
 
                                 {/* Gender */}
                                 <FormControl error={!!backendErrors.gender}>
-                                    <Typography variant="subtitle2" className="mb-2">Jenis Kelamin</Typography>
+                                    <Typography
+                                        variant="subtitle2"
+                                        className="mb-2"
+                                    >
+                                        Jenis Kelamin
+                                    </Typography>
                                     <Controller
                                         name="gender"
                                         control={control}
@@ -147,15 +167,36 @@ export default function UwongForm() {
                                         render={({ field }) => (
                                             <RadioGroup
                                                 row
-                                                value={field.value === null ? '' : field.value ? 'true' : 'false'}
-                                                onChange={(e) => field.onChange(e.target.value === 'true')}
+                                                value={
+                                                    field.value === null
+                                                        ? ''
+                                                        : field.value
+                                                          ? 'true'
+                                                          : 'false'
+                                                }
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value ===
+                                                            'true',
+                                                    )
+                                                }
                                             >
-                                                <FormControlLabel value="true" control={<Radio />} label="Laki-laki" />
-                                                <FormControlLabel value="false" control={<Radio />} label="Perempuan" />
+                                                <FormControlLabel
+                                                    value="true"
+                                                    control={<Radio />}
+                                                    label="Laki-laki"
+                                                />
+                                                <FormControlLabel
+                                                    value="false"
+                                                    control={<Radio />}
+                                                    label="Perempuan"
+                                                />
                                             </RadioGroup>
                                         )}
                                     />
-                                    <FormHelperText>{backendErrors.gender?.[0]}</FormHelperText>
+                                    <FormHelperText>
+                                        {backendErrors.gender?.[0]}
+                                    </FormHelperText>
                                 </FormControl>
 
                                 {/* Tanggal Lahir */}
@@ -178,7 +219,13 @@ export default function UwongForm() {
                                         label="Nomor HP"
                                         placeholder="08xxxxxxxxxx"
                                         {...register('phone')}
-                                        InputProps={{ startAdornment: <InputAdornment position="start">HP</InputAdornment> }}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    HP
+                                                </InputAdornment>
+                                            ),
+                                        }}
                                         error={!!backendErrors.phone}
                                         helperText={backendErrors.phone?.[0]}
                                     />
@@ -200,14 +247,22 @@ export default function UwongForm() {
 
                                 {/* Actions */}
                                 <Box className="flex items-center justify-end gap-2">
-                                    <Button component={Link as any} href="/uwong" variant="text">
+                                    <Button
+                                        component={Link as any}
+                                        href="/uwong"
+                                        variant="text"
+                                    >
                                         Kembali
                                     </Button>
                                     <Button
                                         type="submit"
                                         variant="contained"
                                         disabled={loading}
-                                        startIcon={loading ? <CircularProgress size={18} /> : null}
+                                        startIcon={
+                                            loading ? (
+                                                <CircularProgress size={18} />
+                                            ) : null
+                                        }
                                     >
                                         {isEdit ? 'Update' : 'Simpan'}
                                     </Button>

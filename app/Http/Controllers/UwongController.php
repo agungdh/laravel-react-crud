@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Uwong;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Validator;
 
 class UwongController extends Controller
 {
@@ -16,16 +15,16 @@ class UwongController extends Controller
 
     public function datas(Request $request)
     {
-        $q        = (string) $request->input('q', '');
-        $perPage  = (int) $request->input('per_page', 10);
-        $page     = (int) $request->input('page', 1);
+        $q = (string) $request->input('q', '');
+        $perPage = (int) $request->input('per_page', 10);
+        $page = (int) $request->input('page', 1);
 
         // Whitelist kolom yang boleh di-sort
         $allowedSortBy = ['id', 'name', 'gender', 'birthday', 'phone', 'address', 'created_at'];
-        $sortBy  = $request->input('sort_by', 'id');
+        $sortBy = $request->input('sort_by', 'id');
         $sortDir = strtolower((string) $request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        if (!in_array($sortBy, $allowedSortBy, true)) {
+        if (! in_array($sortBy, $allowedSortBy, true)) {
             $sortBy = 'id';
         }
         $perPage = $perPage > 0 ? min($perPage, 100) : 10;
@@ -69,6 +68,7 @@ class UwongController extends Controller
     {
         $data = $this->validateUwong($request);
         $uwong = Uwong::create($data);
+
         return response()->json($uwong, 201);
     }
 
@@ -97,6 +97,7 @@ class UwongController extends Controller
     {
         $data = $this->validateUwong($request);
         $uwong->update($data);
+
         return response()->json($uwong);
     }
 
@@ -106,6 +107,7 @@ class UwongController extends Controller
     public function destroy(Uwong $uwong)
     {
         $uwong->delete();
+
         return response()->noContent();
     }
 

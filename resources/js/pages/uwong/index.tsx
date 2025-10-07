@@ -5,6 +5,11 @@ import { Head, Link } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 import type { FormValues as UwongFormValues } from './form';
 
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import SearchIcon from '@mui/icons-material/Search';
 import {
     Box,
     Button,
@@ -31,17 +36,24 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import AddIcon from '@mui/icons-material/Add';
-import SearchIcon from '@mui/icons-material/Search';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Uwong', href: '/uwong' }];
 
 type Uwong = UwongFormValues & { uuid: string };
-type UwongPaginator = { data: Uwong[]; current_page: number; per_page: number; total: number };
-type SortBy = 'id' | 'name' | 'gender' | 'birthday' | 'phone' | 'address' | 'created_at';
+type UwongPaginator = {
+    data: Uwong[];
+    current_page: number;
+    per_page: number;
+    total: number;
+};
+type SortBy =
+    | 'id'
+    | 'name'
+    | 'gender'
+    | 'birthday'
+    | 'phone'
+    | 'address'
+    | 'created_at';
 type SortDir = 'asc' | 'desc';
 
 export default function UwongIndex() {
@@ -123,15 +135,31 @@ export default function UwongIndex() {
             <Box className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Paper className="rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                     {/* Toolbar */}
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between" sx={{ p: 2 }}>
-                        <Typography variant="h6" fontWeight={600}>Daftar Uwong</Typography>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%', maxWidth: 520 }}>
+                    <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={2}
+                        alignItems="center"
+                        justifyContent="space-between"
+                        sx={{ p: 2 }}
+                    >
+                        <Typography variant="h6" fontWeight={600}>
+                            Daftar Uwong
+                        </Typography>
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            sx={{ width: '100%', maxWidth: 520 }}
+                        >
                             <TextField
                                 fullWidth
                                 size="small"
                                 placeholder="Cari nama / phone / alamat / tanggal lahir"
                                 value={q}
-                                onChange={(e) => { setQ(e.target.value); setPage(0); }}
+                                onChange={(e) => {
+                                    setQ(e.target.value);
+                                    setPage(0);
+                                }}
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
@@ -141,9 +169,18 @@ export default function UwongIndex() {
                                 }}
                             />
                             <Tooltip title="Refresh">
-                                <IconButton onClick={fetchData}><RefreshIcon /></IconButton>
+                                <IconButton onClick={fetchData}>
+                                    <RefreshIcon />
+                                </IconButton>
                             </Tooltip>
-                            <Button component={Link as any} href="/uwong/create" variant="contained" startIcon={<AddIcon />}>Tambah</Button>
+                            <Button
+                                component={Link as any}
+                                href="/uwong/create"
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                            >
+                                Tambah
+                            </Button>
                         </Stack>
                     </Stack>
 
@@ -159,35 +196,45 @@ export default function UwongIndex() {
                                             active={sortBy === 'name'}
                                             direction={sortDir}
                                             onClick={handleSort('name')}
-                                        >Nama</TableSortLabel>
+                                        >
+                                            Nama
+                                        </TableSortLabel>
                                     </TableCell>
                                     <TableCell>
                                         <TableSortLabel
                                             active={sortBy === 'gender'}
                                             direction={sortDir}
                                             onClick={handleSort('gender')}
-                                        >Gender</TableSortLabel>
+                                        >
+                                            Gender
+                                        </TableSortLabel>
                                     </TableCell>
                                     <TableCell>
                                         <TableSortLabel
                                             active={sortBy === 'birthday'}
                                             direction={sortDir}
                                             onClick={handleSort('birthday')}
-                                        >Tgl Lahir</TableSortLabel>
+                                        >
+                                            Tgl Lahir
+                                        </TableSortLabel>
                                     </TableCell>
                                     <TableCell>
                                         <TableSortLabel
                                             active={sortBy === 'phone'}
                                             direction={sortDir}
                                             onClick={handleSort('phone')}
-                                        >Phone</TableSortLabel>
+                                        >
+                                            Phone
+                                        </TableSortLabel>
                                     </TableCell>
                                     <TableCell>
                                         <TableSortLabel
                                             active={sortBy === 'address'}
                                             direction={sortDir}
                                             onClick={handleSort('address')}
-                                        >Alamat</TableSortLabel>
+                                        >
+                                            Alamat
+                                        </TableSortLabel>
                                     </TableCell>
                                     <TableCell align="right">Aksi</TableCell>
                                 </TableRow>
@@ -196,34 +243,60 @@ export default function UwongIndex() {
                             <TableBody>
                                 {!loading && rows.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                                            <Typography>Belum ada data</Typography>
+                                        <TableCell
+                                            colSpan={6}
+                                            align="center"
+                                            sx={{ py: 6 }}
+                                        >
+                                            <Typography>
+                                                Belum ada data
+                                            </Typography>
                                         </TableCell>
                                     </TableRow>
                                 )}
 
                                 {rows.map((u) => (
                                     <TableRow key={u.uuid} hover>
-                                        <TableCell><Typography fontWeight={600}>{u.name}</Typography></TableCell>
+                                        <TableCell>
+                                            <Typography fontWeight={600}>
+                                                {u.name}
+                                            </Typography>
+                                        </TableCell>
                                         <TableCell>
                                             <Chip
-                                                label={u.gender ? 'Male' : 'Female'}
-                                                color={u.gender ? 'primary' : 'secondary'}
+                                                label={
+                                                    u.gender ? 'Male' : 'Female'
+                                                }
+                                                color={
+                                                    u.gender
+                                                        ? 'primary'
+                                                        : 'secondary'
+                                                }
                                                 variant="outlined"
                                                 size="small"
                                             />
                                         </TableCell>
-                                        <TableCell>{u.birthday ? formatTanggalIndo(u.birthday) : '-'}</TableCell>
+                                        <TableCell>
+                                            {u.birthday
+                                                ? formatTanggalIndo(u.birthday)
+                                                : '-'}
+                                        </TableCell>
                                         <TableCell>{u.phone}</TableCell>
                                         <TableCell>{u.address}</TableCell>
                                         <TableCell align="right">
-                                            <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                justifyContent="flex-end"
+                                            >
                                                 <Button
                                                     component={Link as any}
                                                     href={`/uwong/${u.uuid}/edit`}
                                                     size="small"
                                                     variant="contained"
-                                                    startIcon={<EditIcon fontSize="small" />}
+                                                    startIcon={
+                                                        <EditIcon fontSize="small" />
+                                                    }
                                                 >
                                                     Edit
                                                 </Button>
@@ -231,8 +304,12 @@ export default function UwongIndex() {
                                                     color="error"
                                                     size="small"
                                                     variant="outlined"
-                                                    startIcon={<DeleteIcon fontSize="small" />}
-                                                    onClick={() => setDeleteTarget(u)}
+                                                    startIcon={
+                                                        <DeleteIcon fontSize="small" />
+                                                    }
+                                                    onClick={() =>
+                                                        setDeleteTarget(u)
+                                                    }
                                                 >
                                                     Hapus
                                                 </Button>
@@ -250,7 +327,10 @@ export default function UwongIndex() {
                             onPageChange={(_, newPage) => setPage(newPage)}
                             rowsPerPage={rowsPerPage}
                             rowsPerPageOptions={[5, 10, 25, 50]}
-                            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                            onRowsPerPageChange={(e) => {
+                                setRowsPerPage(parseInt(e.target.value, 10));
+                                setPage(0);
+                            }}
                         />
                     </TableContainer>
                 </Paper>
@@ -265,8 +345,18 @@ export default function UwongIndex() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>Batal</Button>
-                    <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
+                    <Button
+                        onClick={() => setDeleteTarget(null)}
+                        disabled={deleting}
+                    >
+                        Batal
+                    </Button>
+                    <Button
+                        onClick={handleDelete}
+                        color="error"
+                        variant="contained"
+                        disabled={deleting}
+                    >
                         {deleting ? 'Menghapus...' : 'Hapus'}
                     </Button>
                 </DialogActions>
