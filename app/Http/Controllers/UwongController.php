@@ -26,5 +26,4 @@ class UwongController extends Controller
     {
         return $uwong;
     }
-
 }
