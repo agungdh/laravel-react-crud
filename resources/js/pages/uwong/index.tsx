@@ -26,6 +26,7 @@ import {
     TableHead,
     TablePagination,
     TableRow,
+    TableSortLabel,
     TextField,
     Tooltip,
     Typography,
@@ -38,10 +39,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Uwong', href: '/uwong' }];
 
-// Ambil type dari form (phone tetap ada)
 type Uwong = UwongFormValues & { uuid: string };
 
-// Bentuk respons paginator Laravel
+// Laravel paginator shape
 type UwongPaginator = {
     data: Uwong[];
     current_page: number;
@@ -49,8 +49,12 @@ type UwongPaginator = {
     total: number;
 };
 
+// Kolom yang bisa sort (harus match whitelist di controller)
+type SortBy = 'id' | 'name' | 'gender' | 'birthday' | 'phone' | 'address' | 'created_at';
+type SortDir = 'asc' | 'desc';
+
 export default function UwongIndex() {
-    // data & ui state
+    // Data & UI state
     const [rows, setRows] = useState<Uwong[]>([]);
     const [loading, setLoading] = useState(false);
     const [q, setQ] = useState('');
@@ -58,11 +62,15 @@ export default function UwongIndex() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [total, setTotal] = useState(0);
 
-    // delete state
+    // Sorting state
+    const [sortBy, setSortBy] = useState<SortBy>('id');
+    const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+    // Delete state
     const [deleteTarget, setDeleteTarget] = useState<Uwong | null>(null);
     const [deleting, setDeleting] = useState(false);
 
-    // Fetch data dari server (server-side search + pagination)
+    // Server fetch: PATCH /uwong (datas)
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
@@ -76,40 +84,52 @@ export default function UwongIndex() {
                 body: JSON.stringify({
                     q,
                     per_page: rowsPerPage,
-                    page: page + 1, // Laravel paginator expects 1-based
+                    page: page + 1,          // Laravel expects 1-based
+                    sort_by: sortBy,         // server-side sorting
+                    sort_dir: sortDir,
                 }),
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data: UwongPaginator = await res.json();
             setRows(data.data || []);
             setTotal(data.total ?? 0);
-            // optionally: setRowsPerPage(data.per_page ?? rowsPerPage);
         } catch (e) {
             console.error(e);
         } finally {
             setLoading(false);
         }
-    }, [q, page, rowsPerPage]);
+    }, [q, page, rowsPerPage, sortBy, sortDir]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    // actions
+    // Toolbar actions
     const onRefresh = () => fetchData();
-
     const onChangeQuery = (val: string) => {
         setQ(val);
-        setPage(0); // reset ke halaman 1 saat ganti query
+        setPage(0); // reset ke halaman pertama saat query berubah
     };
 
+    // Pagination handlers
     const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
-
     const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(e.target.value, 10));
         setPage(0);
     };
 
+    // Sorting handlers
+    const createSortHandler = (column: SortBy) => () => {
+        if (sortBy === column) {
+            setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortBy(column);
+            setSortDir('asc');
+        }
+        setPage(0);
+    };
+
+    // Delete
     const handleDelete = async () => {
         if (!deleteTarget) return;
         setDeleting(true);
@@ -121,7 +141,7 @@ export default function UwongIndex() {
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             setDeleteTarget(null);
-            fetchData(); // refresh data
+            fetchData();
         } catch (e) {
             console.error(e);
         } finally {
@@ -129,8 +149,10 @@ export default function UwongIndex() {
         }
     };
 
-    // nomor urut tabel
     const startIndex = useMemo(() => page * rowsPerPage, [page, rowsPerPage]);
+
+    // Helper: apakah kolom sedang di-sort
+    const isSorted = (col: SortBy) => sortBy === col;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -138,13 +160,7 @@ export default function UwongIndex() {
             <Box className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Paper className="rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                     {/* Toolbar */}
-                    <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={2}
-                        alignItems="center"
-                        justifyContent="space-between"
-                        sx={{ p: 2 }}
-                    >
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" justifyContent="space-between" sx={{ p: 2 }}>
                         <Typography variant="h6" fontWeight={600}>Daftar Uwong</Typography>
                         <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%', maxWidth: 520 }}>
                             <TextField
@@ -166,12 +182,7 @@ export default function UwongIndex() {
                                     <RefreshIcon />
                                 </IconButton>
                             </Tooltip>
-                            <Button
-                                component={Link as any}
-                                href="/uwong/create"
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                            >
+                            <Button component={Link as any} href="/uwong/create" variant="contained" startIcon={<AddIcon />}>
                                 Tambah
                             </Button>
                         </Stack>
@@ -179,20 +190,69 @@ export default function UwongIndex() {
 
                     {loading && <LinearProgress />}
 
-                    {/* Tabel */}
+                    {/* Table */}
                     <TableContainer>
-                        <Table sx={{ minWidth: 760 }} aria-label="tabel-uwong">
+                        <Table sx={{ minWidth: 820 }} aria-label="tabel-uwong">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell width={48}>#</TableCell>
-                                    <TableCell>Nama</TableCell>
-                                    <TableCell>Gender</TableCell>
-                                    <TableCell>Tgl Lahir</TableCell>
-                                    <TableCell>Phone</TableCell>
-                                    <TableCell>Alamat</TableCell>
+                                    <TableCell width={56}>
+                                        <TableSortLabel
+                                            active={isSorted('id')}
+                                            direction={isSorted('id') ? sortDir : 'asc'}
+                                            onClick={createSortHandler('id')}
+                                        >
+                                            #
+                                        </TableSortLabel>
+                                    </TableCell>
+                                    <TableCell>
+                                        <TableSortLabel
+                                            active={isSorted('name')}
+                                            direction={isSorted('name') ? sortDir : 'asc'}
+                                            onClick={createSortHandler('name')}
+                                        >
+                                            Nama
+                                        </TableSortLabel>
+                                    </TableCell>
+                                    <TableCell>
+                                        <TableSortLabel
+                                            active={isSorted('gender')}
+                                            direction={isSorted('gender') ? sortDir : 'asc'}
+                                            onClick={createSortHandler('gender')}
+                                        >
+                                            Gender
+                                        </TableSortLabel>
+                                    </TableCell>
+                                    <TableCell>
+                                        <TableSortLabel
+                                            active={isSorted('birthday')}
+                                            direction={isSorted('birthday') ? sortDir : 'asc'}
+                                            onClick={createSortHandler('birthday')}
+                                        >
+                                            Tgl Lahir
+                                        </TableSortLabel>
+                                    </TableCell>
+                                    <TableCell>
+                                        <TableSortLabel
+                                            active={isSorted('phone')}
+                                            direction={isSorted('phone') ? sortDir : 'asc'}
+                                            onClick={createSortHandler('phone')}
+                                        >
+                                            Phone
+                                        </TableSortLabel>
+                                    </TableCell>
+                                    <TableCell>
+                                        <TableSortLabel
+                                            active={isSorted('address')}
+                                            direction={isSorted('address') ? sortDir : 'asc'}
+                                            onClick={createSortHandler('address')}
+                                        >
+                                            Alamat
+                                        </TableSortLabel>
+                                    </TableCell>
                                     <TableCell align="right" width={180}>Aksi</TableCell>
                                 </TableRow>
                             </TableHead>
+
                             <TableBody>
                                 {!loading && rows.length === 0 && (
                                     <TableRow>
@@ -200,12 +260,7 @@ export default function UwongIndex() {
                                             <Box display="flex" alignItems="center" justifyContent="center" py={6}>
                                                 <Stack spacing={1} alignItems="center">
                                                     <Typography variant="body1">Belum ada data.</Typography>
-                                                    <Button
-                                                        component={Link as any}
-                                                        href="/uwong/create"
-                                                        variant="outlined"
-                                                        startIcon={<AddIcon />}
-                                                    >
+                                                    <Button component={Link as any} href="/uwong/create" variant="outlined" startIcon={<AddIcon />}>
                                                         Tambah Uwong
                                                     </Button>
                                                 </Stack>
@@ -264,7 +319,7 @@ export default function UwongIndex() {
                             </TableBody>
                         </Table>
 
-                        {/* Pagination server-side */}
+                        {/* Pagination (server-side) */}
                         <TablePagination
                             component="div"
                             count={total}
@@ -290,7 +345,6 @@ export default function UwongIndex() {
                     <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>
                         Batal
                     </Button>
-                    {/* kirim DELETE */}
                     <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
                         {deleting ? 'Menghapus...' : 'Hapus'}
                     </Button>

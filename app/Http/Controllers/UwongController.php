@@ -12,26 +12,37 @@ class UwongController extends Controller
     /**
      * Ambil semua data Uwong (dipakai di React pakai PATCH)
      */
+    // app/Http/Controllers/UwongController.php
+
     public function datas(Request $request)
     {
         $q        = (string) $request->input('q', '');
         $perPage  = (int) $request->input('per_page', 10);
-        $perPage  = $perPage > 0 ? min($perPage, 100) : 10;
+        $page     = (int) $request->input('page', 1);
+
+        // Whitelist kolom yang boleh di-sort
+        $allowedSortBy = ['id', 'name', 'gender', 'birthday', 'phone', 'address', 'created_at'];
+        $sortBy  = $request->input('sort_by', 'id');
+        $sortDir = strtolower((string) $request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy, true)) {
+            $sortBy = 'id';
+        }
+        $perPage = $perPage > 0 ? min($perPage, 100) : 10;
 
         $query = Uwong::query()
             ->when($q !== '', function ($qb) use ($q) {
                 $qb->where(function ($qq) use ($q) {
                     $qq->where('name', 'like', "%{$q}%")
                         ->orWhere('address', 'like', "%{$q}%")
+                        ->orWhere('phone', 'like', "%{$q}%")
                         ->orWhere('birthday', 'like', "%{$q}%");
                 });
             })
-            ->orderBy('id', 'desc');
+            ->orderBy($sortBy, $sortDir);
 
-        // Laravel paginator akan baca "page" dari request otomatis
-        $paginator = $query->paginate($perPage);
+        $paginator = $query->paginate($perPage, ['*'], 'page', max(1, $page));
 
-        // kembalikan standar paginator JSON (ada data, total, per_page, current_page, etc)
         return response()->json($paginator);
     }
 
