@@ -9,11 +9,6 @@ import {
     Box,
     Button,
     Chip,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
     IconButton,
     InputAdornment,
     LinearProgress,
@@ -29,6 +24,11 @@ import {
     TextField,
     Tooltip,
     Typography,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AddIcon from '@mui/icons-material/Add';
@@ -36,19 +36,26 @@ import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Uwong', href: '/uwong' },
-];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Uwong', href: '/uwong' }];
 
-type Uwong = UwongFormValues & { uuid: string };
+// Ambil type dari form; hapus phone dari tampilan list
+type Uwong = Omit<UwongFormValues, 'phone'> & { uuid: string };
+
+// Bentuk respons paginator Laravel
+type UwongPaginator = {
+    data: Uwong[];
+    current_page: number;
+    per_page: number;
+    total: number;
+};
 
 export default function UwongIndex() {
-    const [uwongs, setUwongs] = useState<Uwong[]>([]);
-    const [filtered, setFiltered] = useState<Uwong[]>([]);
+    const [rows, setRows] = useState<Uwong[]>([]);
     const [loading, setLoading] = useState(false);
     const [q, setQ] = useState('');
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(0); // MUI 0-based
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [total, setTotal] = useState(0);
 
     const [deleteTarget, setDeleteTarget] = useState<Uwong | null>(null);
     const [deleting, setDeleting] = useState(false);
@@ -56,43 +63,49 @@ export default function UwongIndex() {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await fetch('/uwong', { method: 'PATCH' });
+            // Laravel paginator expects ?page=1-based
+            const res = await fetch('/uwong', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    q,
+                    per_page: rowsPerPage,
+                    page: page + 1,
+                }),
+            });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data: Uwong[] = await res.json();
-            setUwongs(data);
+            const data: UwongPaginator = await res.json();
+            setRows(data.data || []);
+            // Sinkronkan total & pagination
+            setTotal(data.total ?? 0);
+            // (Optional) per_page dari server bisa dipakai juga:
+            // setRowsPerPage(data.per_page ?? rowsPerPage);
         } catch (e) {
             console.error(e);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [q, page, rowsPerPage]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    useEffect(() => {
-        const term = q.trim().toLowerCase();
-        if (!term) {
-            setFiltered(uwongs);
-            return;
-        }
-        setFiltered(
-            uwongs.filter((u) =>
-                [u.name, u.phone, u.address].some((f) =>
-                    f?.toLowerCase().includes(term)
-                )
-            )
-        );
-        setPage(0);
-    }, [q, uwongs]);
+    // Refresh tombol
+    const onRefresh = () => fetchData();
 
-    const pageRows = useMemo(() => {
-        const start = page * rowsPerPage;
-        return filtered.slice(start, start + rowsPerPage);
-    }, [filtered, page, rowsPerPage]);
+    // Handle search: saat ubah query, reset ke page pertama
+    const onChangeQuery = (val: string) => {
+        setQ(val);
+        setPage(0);
+    };
 
     const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
+
     const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(e.target.value, 10));
         setPage(0);
@@ -109,13 +122,16 @@ export default function UwongIndex() {
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             setDeleteTarget(null);
-            fetchData(); // refresh data
+            fetchData();
         } catch (e) {
             console.error(e);
         } finally {
             setDeleting(false);
         }
     };
+
+    // nomor urut tabel
+    const startIndex = useMemo(() => page * rowsPerPage, [page, rowsPerPage]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -129,9 +145,9 @@ export default function UwongIndex() {
                             <TextField
                                 fullWidth
                                 size="small"
-                                placeholder="Cari nama / HP / alamat"
+                                placeholder="Cari nama / alamat / tanggal lahir"
                                 value={q}
-                                onChange={(e) => setQ(e.target.value)}
+                                onChange={(e) => onChangeQuery(e.target.value)}
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
@@ -141,16 +157,11 @@ export default function UwongIndex() {
                                 }}
                             />
                             <Tooltip title="Refresh">
-                                <IconButton onClick={fetchData}>
+                                <IconButton onClick={onRefresh}>
                                     <RefreshIcon />
                                 </IconButton>
                             </Tooltip>
-                            <Button
-                                component={Link as any}
-                                href="/uwong/create"
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                            >
+                            <Button component={Link as any} href="/uwong/create" variant="contained" startIcon={<AddIcon />}>
                                 Tambah
                             </Button>
                         </Stack>
@@ -167,15 +178,14 @@ export default function UwongIndex() {
                                     <TableCell>Nama</TableCell>
                                     <TableCell>Gender</TableCell>
                                     <TableCell>Tgl Lahir</TableCell>
-                                    <TableCell>HP</TableCell>
                                     <TableCell>Alamat</TableCell>
                                     <TableCell align="right" width={160}>Aksi</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {!loading && pageRows.length === 0 && (
+                                {!loading && rows.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={7}>
+                                        <TableCell colSpan={6}>
                                             <Box display="flex" alignItems="center" justifyContent="center" py={6}>
                                                 <Stack spacing={1} alignItems="center">
                                                     <Typography variant="body1">Belum ada data.</Typography>
@@ -188,9 +198,9 @@ export default function UwongIndex() {
                                     </TableRow>
                                 )}
 
-                                {pageRows.map((u, idx) => (
+                                {rows.map((u, idx) => (
                                     <TableRow key={u.uuid} hover>
-                                        <TableCell>{page * rowsPerPage + idx + 1}</TableCell>
+                                        <TableCell>{startIndex + idx + 1}</TableCell>
                                         <TableCell>
                                             <Typography fontWeight={600}>{u.name}</Typography>
                                         </TableCell>
@@ -203,7 +213,6 @@ export default function UwongIndex() {
                                             />
                                         </TableCell>
                                         <TableCell>{u.birthday ? formatTanggalIndo(u.birthday) : '-'}</TableCell>
-                                        <TableCell>{u.phone || '-'}</TableCell>
                                         <TableCell>
                                             <Tooltip title={u.address || '-'} placement="top" arrow>
                                                 <Typography variant="body2" noWrap sx={{ maxWidth: 320 }}>
@@ -238,10 +247,10 @@ export default function UwongIndex() {
                             </TableBody>
                         </Table>
 
-                        {/* Pagination */}
+                        {/* Pagination server-side */}
                         <TablePagination
                             component="div"
-                            count={filtered.length}
+                            count={total}
                             page={page}
                             onPageChange={handleChangePage}
                             rowsPerPage={rowsPerPage}
@@ -253,10 +262,7 @@ export default function UwongIndex() {
             </Box>
 
             {/* Konfirmasi Hapus */}
-            <Dialog
-                open={!!deleteTarget}
-                onClose={() => setDeleteTarget(null)}
-            >
+            <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)}>
                 <DialogTitle>Hapus Uwong</DialogTitle>
                 <DialogContent>
                     <DialogContentText>

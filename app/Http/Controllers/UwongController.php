@@ -12,9 +12,27 @@ class UwongController extends Controller
     /**
      * Ambil semua data Uwong (dipakai di React pakai PATCH)
      */
-    public function datas()
+    public function datas(Request $request)
     {
-        return Uwong::orderBy('id', 'desc')->get();
+        $q        = (string) $request->input('q', '');
+        $perPage  = (int) $request->input('per_page', 10);
+        $perPage  = $perPage > 0 ? min($perPage, 100) : 10;
+
+        $query = Uwong::query()
+            ->when($q !== '', function ($qb) use ($q) {
+                $qb->where(function ($qq) use ($q) {
+                    $qq->where('name', 'like', "%{$q}%")
+                        ->orWhere('address', 'like', "%{$q}%")
+                        ->orWhere('birthday', 'like', "%{$q}%");
+                });
+            })
+            ->orderBy('id', 'desc');
+
+        // Laravel paginator akan baca "page" dari request otomatis
+        $paginator = $query->paginate($perPage);
+
+        // kembalikan standar paginator JSON (ada data, total, per_page, current_page, etc)
+        return response()->json($paginator);
     }
 
     /**
