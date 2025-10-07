@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import {
@@ -17,15 +17,15 @@ import {
     InputAdornment,
     Radio,
     RadioGroup,
-    Snackbar,
     TextField,
     Typography,
     Alert,
 } from '@mui/material';
 
+// ===== Types =====
 type FormValues = {
     name: string;
-    gender: 'male' | 'female';
+    gender: boolean; // true = male, false = female
     birthday: string;
     phone: string;
     address: string;
@@ -33,7 +33,6 @@ type FormValues = {
 
 export default function CreateUwong() {
     const [loading, setLoading] = useState(false);
-    const [openSnack, setOpenSnack] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
     const [backendErrors, setBackendErrors] = useState<Record<string, string[]>>({});
 
@@ -42,26 +41,25 @@ export default function CreateUwong() {
         handleSubmit,
         watch,
         reset,
+        setValue,
         formState: { isDirty },
     } = useForm<FormValues>({
         defaultValues: {
             name: '',
-            gender: 'male',
+            gender: true, // default laki-laki
             birthday: '',
             phone: '',
             address: '',
         },
     });
 
+    // ===== Submit =====
     const onSubmit = async (data: FormValues) => {
         setLoading(true);
         setServerError(null);
         setBackendErrors({});
 
-        const payload = {
-            ...data,
-            gender: data.gender === 'male' ? true : false,
-        };
+        const payload = { ...data }; // gender sudah boolean langsung
 
         try {
             const res = await fetch('/uwong', {
@@ -83,10 +81,9 @@ export default function CreateUwong() {
                     throw new Error(`HTTP ${res.status}`);
                 }
             } else {
-                setOpenSnack(true);
-                await res.json();
-                reset({ name: '', gender: 'male', birthday: '', phone: '', address: '' });
-                setBackendErrors({});
+                // Clear form -> lalu redirect ke /uwong
+                reset({ name: '', gender: true, birthday: '', phone: '', address: '' });
+                router.visit('/uwong');
             }
         } catch (e: any) {
             setServerError(e?.message || 'Terjadi kesalahan tak terduga.');
@@ -100,7 +97,6 @@ export default function CreateUwong() {
     return (
         <AppLayout
             breadcrumbs={[
-                { title: 'Dashboard', href: '/dashboard' },
                 { title: 'Uwong', href: '/uwong' },
                 { title: 'Create', href: '/uwong/create' },
             ]}
@@ -137,8 +133,8 @@ export default function CreateUwong() {
                     <CardContent>
                         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
                             <Grid container spacing={3}>
-                                {/* Name */}
-                                <Grid item xs={12} md={6}>
+                                {/* Name — 1 baris */}
+                                <Grid item xs={12}>
                                     <FormControl fullWidth>
                                         <TextField
                                             label="Nama Lengkap"
@@ -150,22 +146,29 @@ export default function CreateUwong() {
                                     </FormControl>
                                 </Grid>
 
-                                {/* Gender */}
-                                <Grid item xs={12} md={6}>
+                                {/* Gender — 1 baris */}
+                                <Grid item xs={12}>
                                     <FormControl error={!!backendErrors.gender}>
                                         <Typography variant="subtitle2" className="mb-2">
                                             Jenis Kelamin
                                         </Typography>
-                                        <RadioGroup row {...register('gender')}>
-                                            <FormControlLabel value="male" control={<Radio />} label="Laki-laki" />
-                                            <FormControlLabel value="female" control={<Radio />} label="Perempuan" />
+                                        <RadioGroup
+                                            row
+                                            {...register('gender')}
+                                            onChange={(e) => {
+                                                const value = e.target.value === 'true';
+                                                setValue('gender', value);
+                                            }}
+                                        >
+                                            <FormControlLabel value="true" control={<Radio />} label="Laki-laki" />
+                                            <FormControlLabel value="false" control={<Radio />} label="Perempuan" />
                                         </RadioGroup>
                                         <FormHelperText>{backendErrors.gender?.[0]}</FormHelperText>
                                     </FormControl>
                                 </Grid>
 
-                                {/* Birthday */}
-                                <Grid item xs={12} md={6}>
+                                {/* Birthday — 1 baris */}
+                                <Grid item xs={12}>
                                     <FormControl fullWidth>
                                         <TextField
                                             type="date"
@@ -178,8 +181,8 @@ export default function CreateUwong() {
                                     </FormControl>
                                 </Grid>
 
-                                {/* Phone */}
-                                <Grid item xs={12} md={6}>
+                                {/* Phone — 1 baris */}
+                                <Grid item xs={12}>
                                     <FormControl fullWidth>
                                         <TextField
                                             label="Nomor HP"
@@ -194,7 +197,7 @@ export default function CreateUwong() {
                                     </FormControl>
                                 </Grid>
 
-                                {/* Address */}
+                                {/* Address — 1 baris */}
                                 <Grid item xs={12}>
                                     <FormControl fullWidth>
                                         <TextField
@@ -209,7 +212,7 @@ export default function CreateUwong() {
                                     </FormControl>
                                 </Grid>
 
-                                {/* Actions */}
+                                {/* Actions — 1 baris */}
                                 <Grid item xs={12}>
                                     <Box className="flex items-center gap-2">
                                         <Button
@@ -247,17 +250,6 @@ export default function CreateUwong() {
                     </Typography>
                 </Box>
             </Box>
-
-            <Snackbar
-                open={openSnack}
-                autoHideDuration={3000}
-                onClose={() => setOpenSnack(false)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            >
-                <Alert onClose={() => setOpenSnack(false)} severity="success" variant="filled">
-                    Data berhasil disimpan!
-                </Alert>
-            </Snackbar>
         </AppLayout>
     );
 }
